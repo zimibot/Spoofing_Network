@@ -1,0 +1,10 @@
+[
+    {
+        "name": "Intel(R) Wi-Fi 6E AX211 160MHz",
+        "guid": "{6720E30B-D720-4013-A13A-53CFBB891E73}"
+    },
+    {
+        "name": "VirtualBox Host-Only Ethernet Adapter",
+        "guid": "{2AB4556B-D20A-4D33-9D02-262894373F19}"
+    }
+]

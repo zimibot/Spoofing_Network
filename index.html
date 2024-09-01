@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Network Management</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
+    <style>
+        body {
+            padding-top: 50px;
+            background-color: #f8f9fa;
+        }
+        .container {
+            max-width: 900px;
+        }
+        .card-header {
+            font-size: 1.25rem;
+            font-weight: 500;
+        }
+        .btn-custom {
+            background-color: #007bff;
+            color: white;
+        }
+        .btn-custom:hover {
+            background-color: #0056b3;
+            color: white;
+        }
+        .form-control {
+            border-radius: 0.25rem;
+        }
+        #loadingSpinner {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1000;
+        }
+        .google-loader {
+            width: 100px;
+            height: 100px;
+            display: flex;
+            justify-content: space-around;
+        }
+        .google-loader div {
+            width: 15px;
+            height: 15px;
+            background-color: #4285f4;
+            border-radius: 50%;
+            animation: google-bounce 1.4s infinite ease-in-out both;
+        }
+        .google-loader div:nth-child(1) {
+            animation-delay: -0.32s;
+        }
+        .google-loader div:nth-child(2) {
+            animation-delay: -0.16s;
+        }
+        @keyframes google-bounce {
+            0%, 80%, 100% {
+                transform: scale(0);
+            }
+            40% {
+                transform: scale(1);
+            }
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-center mb-4">Network Management Dashboard</h1>
+
+        <!-- Loading Spinner -->
+        <div id="loadingSpinner">
+            <div class="google-loader">
+                <div></div>
+                <div></div>
+                <div></div>
+            </div>
+        </div>
+
+        <!-- Whitelist Management -->
+        <div class="card mb-4">
+            <div class="card-header">Whitelist Management</div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label for="whitelistIps" class="form-label">Add IPs to Whitelist</label>
+                    <input type="text" class="form-control" id="whitelistIps" placeholder="Enter IPs (comma-separated)">
+                </div>
+                <button class="btn btn-custom mb-3" onclick="addToWhitelist()">Add to Whitelist</button>
+                <button class="btn btn-danger mb-3" onclick="removeFromWhitelist()">Remove from Whitelist</button>
+                <hr>
+                <h5>Current Whitelist</h5>
+                <ul class="list-group" id="whitelist"></ul>
+            </div>
+        </div>
+
+        <!-- ARP Spoofing Management -->
+        <div class="card mb-4">
+            <div class="card-header">ARP Spoofing Management</div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label for="interfaceSelect" class="form-label">Select Network Interface</label>
+                    <select class="form-control" id="interfaceSelect"></select>
+                </div>
+                <div class="mb-3">
+                    <label for="targetIps" class="form-label">Target IPs</label>
+                    <input type="text" class="form-control" id="targetIps" placeholder='Enter "all" or specific IPs (comma-separated)'>
+                </div>
+                <div class="mb-3">
+                    <label for="numThreads" class="form-label">Number of Threads</label>
+                    <input type="number" class="form-control" id="numThreads" placeholder="Enter Number of Threads (e.g., 10)">
+                </div>
+                <button class="btn btn-success mb-3" onclick="startNetcut()">Start ARP Spoofing</button>
+                <button class="btn btn-danger mb-3" onclick="stopNetcut()">Stop ARP Spoofing</button>
+                <button class="btn btn-warning mb-3" onclick="forceStopNetcut()">Force Stop ARP Spoofing</button>
+            </div>
+        </div>
+
+        <!-- Network Scanning -->
+        <div class="card mb-4">
+            <div class="card-header">Network Scanning</div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label for="scanInterfaceSelect" class="form-label">Select Network Interface for Scanning</label>
+                    <select class="form-control" id="scanInterfaceSelect"></select>
+                </div>
+                <button class="btn btn-custom mb-3" onclick="performScanInterface()">Perform Interface Scan</button>
+                <button class="btn btn-custom mb-3" onclick="loadInterfaceData()">Load Interface Data</button>
+                <button class="btn btn-custom mb-3" onclick="performScanNetwork()">Perform Network Scan</button>
+                <button class="btn btn-custom mb-3" onclick="loadScannedNetworkData()">Load Scanned Network Data</button>
+                <hr>
+                <h5>Scanned Devices</h5>
+                <ul class="list-group" id="scannedDevices"></ul>
+            </div>
+        </div>
+
+        <!-- Help -->
+        <div class="card mb-4">
+            <div class="card-header">Help</div>
+            <div class="card-body">
+                <button class="btn btn-info mb-3" onclick="getHelp()">Get Help</button>
+                <pre id="helpContent" class="mt-3"></pre>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showSpinner() {
+            document.getElementById('loadingSpinner').style.display = 'flex';
+        }
+
+        function hideSpinner() {
+            document.getElementById('loadingSpinner').style.display = 'none';
+        }
+
+        function handleFetchError(error) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: error.message
+            });
+            hideSpinner();
+        }
+
+        // Function to load available interfaces
+        function loadInterfaceData() {
+            showSpinner();
+            fetch('http://localhost:5000/interface_data')
+                .then(response => response.json())
+                .then(data => {
+                    const interfaceSelect = document.getElementById('interfaceSelect');
+                    const scanInterfaceSelect = document.getElementById('scanInterfaceSelect');
+                    interfaceSelect.innerHTML = '';
+                    scanInterfaceSelect.innerHTML = '';
+
+                    data.forEach((iface, index) => {
+                        const option = document.createElement('option');
+                        option.value = index;
+                        option.textContent = iface.name;
+
+                        interfaceSelect.appendChild(option);
+                        scanInterfaceSelect.appendChild(option.cloneNode(true));
+                    });
+                })
+                .catch(handleFetchError)
+                .finally(hideSpinner);
+        }
+
+        function performScanInterface() {
+            showSpinner();
+            fetch('http://localhost:5000/scan_interfaces')
+                .then(response => response.json())
+                .then(data => {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Success',
+                        text: 'Network interfaces scanned successfully!'
+                    });
+                })
+                .catch(handleFetchError)
+                .finally(hideSpinner);
+        }
+
+        // Function to load current whitelist
+        function loadWhitelist() {
+            showSpinner();
+            fetch('http://localhost:5000/whitelist')
+                .then(response => response.json())
+                .then(data => {
+                    const whitelist = document.getElementById('whitelist');
+                    whitelist.innerHTML = '';
+                    data.forEach(ip => {
+                        const li = document.createElement('li');
+                        li.className = 'list-group-item';
+                        li.textContent = ip;
+                        whitelist.appendChild(li);
+                    });
+                })
+                .catch(handleFetchError)
+                .finally(hideSpinner);
+        }
+
+        // Function to add IPs to whitelist
+        function addToWhitelist() {
+            const ips = document.getElementById('whitelistIps').value.split(',');
+            showSpinner();
+            fetch('http://localhost:5000/whitelist', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ ip: ips.map(ip => ip.trim()) })
+            })
+            .then(response => response.json())
+            .then(data => {
+                Swal.fire({
+                    icon: data.error ? 'error' : 'success',
+                    title: data.error ? 'Failed' : 'Success',
+                    text: data.status || data.error
+                });
+                loadWhitelist();
+            })
+            .catch(handleFetchError)
+            .finally(hideSpinner);
+        }
+
+        // Function to remove IPs from whitelist
+        function removeFromWhitelist() {
+            const ips = document.getElementById('whitelistIps').value.split(',');
+            showSpinner();
+            fetch('http://localhost:5000/whitelist', {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ ip: ips.map(ip => ip.trim()) })
+            })
+            .then(response => response.json())
+            .then(data => {
+                Swal.fire({
+                    icon: data.error ? 'error' : 'success',
+                    title: data.error ? 'Failed' : 'Success',
+                    text: data.status || data.error
+                });
+                loadWhitelist();
+            })
+            .catch(handleFetchError)
+            .finally(hideSpinner);
+        }
+
+        // Function to start ARP spoofing
+        function startNetcut() {
+            const interfaceIdx = document.getElementById('interfaceSelect').value;
+            const targetIps = document.getElementById('targetIps').value;
+            const numThreads = document.getElementById('numThreads').value;
+
+            const targetIpsFormatted = targetIps.trim().toLowerCase() === "all"
+                ? "all"
+                : targetIps.split(',').map(ip => ip.trim());
+
+            showSpinner();
+            fetch('http://localhost:5000/start_netcut', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ 
+                    interface: parseInt(interfaceIdx), 
+                    target_ips: targetIpsFormatted,
+                    num_threads: parseInt(numThreads)
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                Swal.fire({
+                    icon: data.error ? 'error' : 'success',
+                    title: data.error ? 'Failed' : 'Success',
+                    text: data.status || data.error
+                });
+            })
+            .catch(handleFetchError)
+            .finally(hideSpinner);
+        }
+
+        // Function to stop ARP spoofing
+        function stopNetcut() {
+            showSpinner();
+            fetch('http://localhost:5000/stop_netcut', {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                Swal.fire({
+                    icon: data.error ? 'error' : 'success',
+                    title: data.error ? 'Failed' : 'Success',
+                    text: data.status || data.error
+                });
+            })
+            .catch(handleFetchError)
+            .finally(hideSpinner);
+        }
+
+        // Function to force stop ARP spoofing
+        function forceStopNetcut() {
+            showSpinner();
+            fetch('http://localhost:5000/force_stop_netcut', {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                Swal.fire({
+                    icon: data.error ? 'error' : 'success',
+                    title: data.error ? 'Failed' : 'Success',
+                    text: data.status || data.error
+                });
+            })
+            .catch(handleFetchError)
+            .finally(hideSpinner);
+        }
+
+        // Function to perform network scan
+        function performScanNetwork() {
+            const interfaceIdx = document.getElementById('scanInterfaceSelect').value;
+            showSpinner();
+            fetch(`http://localhost:5000/scan_network?interface=${interfaceIdx}`)
+                .then(response => response.json())
+                .then(data => {
+                    const scannedDevices = document.getElementById('scannedDevices');
+                    scannedDevices.innerHTML = '';
+                    data.forEach(device => {
+                        const li = document.createElement('li');
+                        li.className = 'list-group-item';
+                        li.textContent = `${device.ip} (${device.mac})`;
+                        scannedDevices.appendChild(li);
+                    });
+                })
+                .catch(handleFetchError)
+                .finally(hideSpinner);
+        }
+
+        // Function to load scanned network data from JSON file
+        function loadScannedNetworkData() {
+            showSpinner();
+            fetch('http://localhost:5000/scan_network_data')
+                .then(response => response.json())
+                .then(data => {
+                    const scannedDevices = document.getElementById('scannedDevices');
+                    scannedDevices.innerHTML = '';
+                    data.forEach(device => {
+                        const li = document.createElement('li');
+                        li.className = 'list-group-item';
+                        li.textContent = `${device.ip} (${device.mac})`;
+                        scannedDevices.appendChild(li);
+                    });
+                })
+                .catch(handleFetchError)
+                .finally(hideSpinner);
+        }
+
+        // Function to get help
+        function getHelp() {
+            showSpinner();
+            fetch('http://localhost:5000/help')
+                .then(response => response.json())
+                .then(data => {
+                    const helpContent = document.getElementById('helpContent');
+                    helpContent.textContent = JSON.stringify(data, null, 4);
+                })
+                .catch(handleFetchError)
+                .finally(hideSpinner);
+        }
+
+        // Load the current interfaces and whitelist when the page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            loadInterfaceData();
+            loadWhitelist();
+            loadScannedNetworkData(); // Load scanned network data on page load
+        });
+    </script>
+</body>
+</html>
