@@ -1,4 +1,5 @@
 # NetCut-like API
+![Dashboard Screenshot](./screenshots/gambar.png)
 
 NetCut-like API is a Python-based application built with Flask to manage ARP spoofing, network scanning, and IP whitelisting on a local network. This application allows you to perform network scans, start ARP spoofing attacks, manage whitelisted IPs, and more. It also provides a web-based dashboard for easy management.
 
