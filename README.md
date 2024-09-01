@@ -40,3 +40,15 @@ NetCut-like API is a Python-based application built with Flask to manage ARP spo
    ```bash
    git clone https://github.com/yourusername/netcut-like-api.git
    cd netcut-like-api
+   
+2. **Install the Required Dependencies:**:
+   ```bash
+   pip install -r requirements.txt
+   
+3. **Usage:**:
+   ```bash
+    python api.py
+
+   
+
+   
