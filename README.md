@@ -38,7 +38,7 @@ NetCut-like API is a Python-based application built with Flask to manage ARP spo
 
 1. **Clone the Repository**:
    ```bash
-   git clone https://github.com/yourusername/netcut-like-api.git
+   git clone https://github.com/zimibot/Spoofing_Network.git
    cd netcut-like-api
    
 2. **Install the Required Dependencies:**:
