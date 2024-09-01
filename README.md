@@ -1,5 +1,3 @@
-
-
 # NetCut-like API
 ![Dashboard Screenshot](./screenshots/gambar.jpg)
 
@@ -58,7 +56,12 @@ NetCut-like API is a Python-based application built with Flask to manage ARP spo
    pip install -r requirements.txt
    ```
 
-3. **Run the Application**:
+3. **Install WMI on Windows** (if not installed):
+   ```bash
+   pip install WMI
+   ```
+
+4. **Run the Application**:
    ```bash
    python api.py
    ```
