@@ -1,5 +1,5 @@
-Flask==2.3.3
-Flask-CORS==4.0.0
+Flask==2.1.1
+Flask-CORS==3.0.10
+scapy==2.4.5
+psutil==5.9.0
 netifaces==0.11.0
-WMI==1.5.1
-scapy==2.5.0
