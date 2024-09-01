@@ -48,7 +48,4 @@ NetCut-like API is a Python-based application built with Flask to manage ARP spo
 3. **Usage:**:
    ```bash
     python api.py
-
-   
-
    
