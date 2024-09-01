@@ -106,7 +106,11 @@
                 </div>
                 <div class="mb-3">
                     <label for="targetIps" class="form-label">Target IPs</label>
-                    <input type="text" class="form-control" id="targetIps" placeholder='Enter "all" or specific IPs (comma-separated)'>
+                    <select multiple class="form-control" id="targetIps"></select>
+                </div>
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" id="selectAllIps" onchange="toggleSelectAllIps()">
+                    <label class="form-check-label" for="selectAllIps">Select All IPs</label>
                 </div>
                 <div class="mb-3">
                     <label for="numThreads" class="form-label">Number of Threads</label>
@@ -162,6 +166,19 @@
                 text: error.message
             });
             hideSpinner();
+        }
+
+        function toggleSelectAllIps() {
+            const selectAllCheckbox = document.getElementById('selectAllIps');
+            const targetIpsSelect = document.getElementById('targetIps');
+            
+            if (selectAllCheckbox.checked) {
+                for (let i = 0; i < targetIpsSelect.options.length; i++) {
+                    targetIpsSelect.options[i].selected = true;
+                }
+            } else {
+                targetIpsSelect.selectedIndex = -1;
+            }
         }
 
         // Function to load available interfaces
@@ -273,12 +290,11 @@
         // Function to start ARP spoofing
         function startNetcut() {
             const interfaceIdx = document.getElementById('interfaceSelect').value;
-            const targetIps = document.getElementById('targetIps').value;
+            const targetIpsSelect = document.getElementById('targetIps');
             const numThreads = document.getElementById('numThreads').value;
 
-            const targetIpsFormatted = targetIps.trim().toLowerCase() === "all"
-                ? "all"
-                : targetIps.split(',').map(ip => ip.trim());
+            const selectedIps = Array.from(targetIpsSelect.selectedOptions).map(option => option.value);
+            const targetIpsFormatted = selectedIps.includes("all") ? "all" : selectedIps;
 
             showSpinner();
             fetch('http://localhost:5000/start_netcut', {
@@ -349,11 +365,23 @@
                 .then(data => {
                     const scannedDevices = document.getElementById('scannedDevices');
                     scannedDevices.innerHTML = '';
+                    const targetIpsSelect = document.getElementById('targetIps');
+                    targetIpsSelect.innerHTML = ''; // Clear previous options
+                    const allOption = document.createElement('option');
+                    allOption.value = 'all';
+                    allOption.textContent = 'all';
+                    targetIpsSelect.appendChild(allOption);
+
                     data.forEach(device => {
                         const li = document.createElement('li');
                         li.className = 'list-group-item';
                         li.textContent = `${device.ip} (${device.mac})`;
                         scannedDevices.appendChild(li);
+
+                        const option = document.createElement('option');
+                        option.value = device.ip;
+                        option.textContent = device.ip;
+                        targetIpsSelect.appendChild(option);
                     });
                 })
                 .catch(handleFetchError)
@@ -368,11 +396,23 @@
                 .then(data => {
                     const scannedDevices = document.getElementById('scannedDevices');
                     scannedDevices.innerHTML = '';
+                    const targetIpsSelect = document.getElementById('targetIps');
+                    targetIpsSelect.innerHTML = ''; // Clear previous options
+                    const allOption = document.createElement('option');
+                    allOption.value = 'all';
+                    allOption.textContent = 'all';
+                    targetIpsSelect.appendChild(allOption);
+
                     data.forEach(device => {
                         const li = document.createElement('li');
                         li.className = 'list-group-item';
                         li.textContent = `${device.ip} (${device.mac})`;
                         scannedDevices.appendChild(li);
+
+                        const option = document.createElement('option');
+                        option.value = device.ip;
+                        option.textContent = device.ip;
+                        targetIpsSelect.appendChild(option);
                     });
                 })
                 .catch(handleFetchError)
