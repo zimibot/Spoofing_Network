@@ -1,3 +1,4 @@
+
 # NetCut-like API
 ![Dashboard Screenshot](./screenshots/gambar.jpg)
 
@@ -11,11 +12,13 @@ NetCut-like API is a Python-based application built with Flask to manage ARP spo
 - [Usage](#usage)
   - [Running the Application](#running-the-application)
   - [Accessing the Dashboard](#accessing-the-dashboard)
+  - [Running the `index.html` Locally](#running-the-index-html-locally)
   - [API Endpoints](#api-endpoints)
   - [Web Dashboard Functionality](#web-dashboard-functionality)
 - [Running on Termux](#running-on-termux)
   - [Installation on Termux](#installation-on-termux)
   - [Running the API on Termux](#running-the-api-on-termux)
+  - [Running `index.html` on Termux](#running-indexhtml-on-termux)
   - [Accessing the API on Termux](#accessing-the-api-on-termux)
 - [Notes](#notes)
 - [License](#license)
@@ -70,11 +73,30 @@ NetCut-like API is a Python-based application built with Flask to manage ARP spo
 
 ### Running the Application
 1. Start the Flask application by running `python api.py` in your terminal.
-2. The application will be accessible on `http://localhost:5000`.
+2. The API will be accessible on `http://localhost:5000`.
+   - **Note**: Port `5000` is used exclusively for the API.
 
 ### Accessing the Dashboard
-- Open your web browser and go to `http://localhost:5000`.
-- From the dashboard, you can manage ARP spoofing, network scanning, and IP whitelisting.
+- The dashboard itself is not served by the Flask API. To access the dashboard, you need to open the `index.html` file separately.
+
+### Running the `index.html` Locally
+
+1. **Ensure the Flask API is Running**: Make sure the Flask API is running on your machine (`http://localhost:5000`).
+
+2. **Open the `index.html` File Using Python**:
+   - Navigate to the directory where `index.html` is located:
+     ```bash
+     cd /path/to/your/index.html
+     ```
+   - Start a simple HTTP server using Python:
+     ```bash
+     python -m http.server 8080
+     ```
+     This command will serve the files in the directory on port `8080`.
+
+3. **Access the Dashboard**:
+   - **From Your Computer**: Open a browser and go to `http://localhost:8080/index.html`.
+   - **From Another Device**: Use the IP address of your machine (e.g., `http://<Your-IP>:8080/index.html`).
 
 ### API Endpoints
 - **`GET /scan_interfaces`**: Scan available network interfaces and save them to JSON.
@@ -134,6 +156,26 @@ NetCut-like API is a Python-based application built with Flask to manage ARP spo
    python api.py
    ```
 
+### Running `index.html` on Termux
+
+1. **Ensure the Flask API is Running**:
+   - Ensure that your Flask API is running on `http://localhost:5000` by executing:
+     ```bash
+     python api.py
+     ```
+
+2. **Serve `index.html` Using Python**:
+   - Install a Python HTTP server to serve the `index.html` file:
+     ```bash
+     cd /path/to/your/index.html
+     python -m http.server 8080
+     ```
+   - This command will serve the files in the directory on port `8080`.
+
+3. **Access the Dashboard**:
+   - **From Your Android Device**: Open a web browser and navigate to `http://localhost:8080/index.html`.
+   - **From Another Device**: Find the IP address of your Android device by running `ifconfig` in Termux. Access the dashboard using `http://<Your-IP>:8080/index.html`.
+
 ### Accessing the API on Termux
 - **From Your Android Device**: Open a browser and go to `http://localhost:5000`.
 - **From Another Device**: Find the IP address of your Android device by running `ifconfig` in Termux, then access the API using `http://<Your-IP>:5000`.
@@ -145,4 +187,3 @@ NetCut-like API is a Python-based application built with Flask to manage ARP spo
 
 ## License
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
-
