@@ -15,6 +15,7 @@ CORS(app)
 interfaces_file_path = 'network_interfaces.json'  # For network interfaces
 json_file_path = 'network_devices.json'  # For scanned network devices
 whitelist_file_path = 'ip_whitelist.json'  # For IP whitelist
+netcut_file_path = 'netcut_ips.json'  # For storing IPs selected for spoofing
 
 # List to store active threads and events for ARP spoofing
 active_threads = []
@@ -119,7 +120,8 @@ def get_local_ip(interface_guid):
 def scan_network(ip_range, local_ip, gateway_ip):
     devices = []
     whitelist = load_whitelist_from_json()
-    for _ in range(3):
+    
+    for _ in range(3):  # Repeat the ARP scan 3 times for thoroughness
         arp_request = ARP(pdst=ip_range)
         broadcast = Ether(dst="ff:ff:ff:ff:ff:ff")
         arp_request_broadcast = broadcast / arp_request
@@ -127,9 +129,16 @@ def scan_network(ip_range, local_ip, gateway_ip):
 
         for element in answered_list:
             ip = element[1].psrc
+            mac = element[1].hwsrc
             if ip != local_ip and ip != gateway_ip and ip not in whitelist:
-                devices.append({'ip': ip, 'mac': element[1].hwsrc})
+                # Avoid adding duplicates
+                if not any(device['ip'] == ip for device in devices):
+                    devices.append({'ip': ip, 'mac': mac})
     
+    # Sort the devices by IP address
+    devices.sort(key=lambda device: device['ip'])
+    
+    # Overwrite the devices in the JSON file with the new scan results
     update_devices_in_json(devices)
     
     return devices
@@ -142,17 +151,41 @@ def load_devices_from_json():
     return devices
 
 def update_devices_in_json(new_devices):
-    ensure_json_file_exists(json_file_path, [])  # Ensure the JSON file exists
+    """Overwrite the JSON file with the new devices (no previous devices are kept)."""
+    ensure_json_file_exists(json_file_path, [])
+    with open(json_file_path, 'w') as json_file:
+        json.dump(new_devices, json_file, indent=4)
+
+def save_netcut_ips_to_json(ips):
+    """Save the selected IPs for netcut to a JSON file."""
+    with open(netcut_file_path, 'w') as json_file:
+        json.dump(ips, json_file, indent=4)
+
+def load_netcut_ips_from_json():
+    """Load the IPs currently being spoofed from a JSON file."""
+    ensure_json_file_exists(netcut_file_path, [])
+    with open(netcut_file_path, 'r') as json_file:
+        netcut_ips = json.load(json_file)
+    return netcut_ips
+
+def add_devices_to_json(ips):
+    """Add multiple IP addresses back to the network_devices.json file."""
     existing_devices = load_devices_from_json()
 
-    # Update the devices list with new devices, avoiding duplicates
-    for new_device in new_devices:
-        if not any(device['ip'] == new_device['ip'] for device in existing_devices):
-            existing_devices.append(new_device)
+    # Add each IP back to the list if it doesn't already exist
+    for ip in ips:
+        if not any(device['ip'] == ip for device in existing_devices):
+            existing_devices.append({'ip': ip, 'mac': 'unknown'})
+    
+    # Sort the devices by IP address
+    existing_devices.sort(key=lambda device: device['ip'])
 
-    with open(json_file_path, 'w') as json_file:
-        json.dump(existing_devices, json_file, indent=4)
+    update_devices_in_json(existing_devices)
 
+def clear_netcut_ips_json():
+    """Clear all IPs from the netcut_ips.json file."""
+    with open(netcut_file_path, 'w') as json_file:
+        json.dump([], json_file, indent=4)
 def force_stop_all_spoofing():
     global stop_events, active_threads
     for stop_event in stop_events:
@@ -253,6 +286,14 @@ def api_start_netcut():
             "whitelist": whitelist
         }), 200
 
+    # Save the selected IPs for netcut to the JSON file
+    save_netcut_ips_to_json(filtered_ips_list)
+
+    # Remove the selected IPs from network_devices.json
+    existing_devices = load_devices_from_json()
+    updated_devices = [device for device in existing_devices if device['ip'] not in filtered_ips_list]
+    update_devices_in_json(updated_devices)
+
     threading.Thread(target=arp_spoofing_manager, args=(gateway_ip, num_threads)).start()
 
     return jsonify({
@@ -260,6 +301,12 @@ def api_start_netcut():
         "whitelist": whitelist,
         "affected_ips": filtered_ips_list
     })
+
+@app.route('/get_netcut', methods=['GET'])
+def api_get_netcut():
+    """Get the list of IPs currently being spoofed."""
+    netcut_ips = load_netcut_ips_from_json()
+    return jsonify(netcut_ips)
 
 def load_whitelist_from_json():
     """Load the IP whitelist from a JSON file."""
@@ -275,21 +322,57 @@ def add_ip_to_whitelist(ip):
         whitelist.append(ip)
         with open(whitelist_file_path, 'w') as json_file:
             json.dump(whitelist, json_file, indent=4)
+def add_device_to_json(ip):
+    """Add an IP address back to the network_devices.json file."""
+    existing_devices = load_devices_from_json()
+
+    # Check if the IP already exists in the devices list
+    if not any(device['ip'] == ip for device in existing_devices):
+        # Add the IP back to the list with a placeholder MAC address
+        existing_devices.append({'ip': ip, 'mac': 'unknown'})
+        update_devices_in_json(existing_devices)
+
+
 
 def remove_ip_from_whitelist(ip):
-    """Remove an IP address from the whitelist."""
+    """Remove an IP address from the whitelist and add it back to network devices."""
     whitelist = load_whitelist_from_json()
     if ip in whitelist:
         whitelist.remove(ip)
         with open(whitelist_file_path, 'w') as json_file:
             json.dump(whitelist, json_file, indent=4)
+        # Add the removed IP back to the network devices
+        add_device_to_json(ip)
+
+def remove_whitelisted_ips_from_devices(whitelisted_ips):
+    """Remove whitelisted IPs from the devices JSON file."""
+    existing_devices = load_devices_from_json()
+    
+    # Filter out devices that are in the whitelist
+    updated_devices = [device for device in existing_devices if device['ip'] not in whitelisted_ips]
+    
+    # Save the updated device list back to the JSON file
+    with open(json_file_path, 'w') as json_file:
+        json.dump(updated_devices, json_file, indent=4)
 
 @app.route('/whitelist', methods=['POST'])
 def add_to_whitelist():
     global stop_events, active_threads
     
+    # Check if there are active spoofing threads
     if any(thread.is_alive() for thread in active_threads):
-        force_stop_all_spoofing()
+        # Stop all active spoofing threads
+        for stop_event in stop_events:
+            stop_event.set()  # Signal the event to stop the thread
+
+        # Wait for all threads to finish
+        for thread in active_threads:
+            if thread.is_alive():
+                thread.join()
+
+        # Clear the list of threads and events after stopping
+        active_threads.clear()
+        stop_events.clear()
 
     data = request.get_json()
     ips = data.get('ip')
@@ -307,14 +390,18 @@ def add_to_whitelist():
                 already_whitelisted.append(ip)
         
         if added_ips:
-            return jsonify({"status": f"IPs {added_ips} added to whitelist", "skipped": already_whitelisted}), 200
+            # Update devices after adding to whitelist
+            remove_whitelisted_ips_from_devices(added_ips)
+            return jsonify({"status": f"IPs {added_ips} added to whitelist and devices updated", "skipped": already_whitelisted}), 200
         else:
             return jsonify({"error": f"All provided IPs are already in the whitelist", "skipped": already_whitelisted}), 400
 
     elif isinstance(ips, str):
         if ips not in load_whitelist_from_json():
             add_ip_to_whitelist(ips)
-            return jsonify({"status": f"IP {ips} added to whitelist"}), 200
+            # Update devices after adding to whitelist
+            remove_whitelisted_ips_from_devices([ips])
+            return jsonify({"status": f"IP {ips} added to whitelist and devices updated"}), 200
         else:
             return jsonify({"error": f"IP {ips} is already in the whitelist"}), 400
 
@@ -344,14 +431,14 @@ def remove_from_whitelist():
                 not_in_whitelist.append(ip)
         
         if removed_ips:
-            return jsonify({"status": f"IPs {removed_ips} removed from whitelist", "skipped": not_in_whitelist}), 200
+            return jsonify({"status": f"IPs {removed_ips} removed from whitelist and added back to devices", "skipped": not_in_whitelist}), 200
         else:
             return jsonify({"error": f"None of the provided IPs are in the whitelist", "skipped": not_in_whitelist}), 400
 
     elif isinstance(ips, str):
         if ips in load_whitelist_from_json():
             remove_ip_from_whitelist(ips)
-            return jsonify({"status": f"IP {ips} removed from whitelist"}), 200
+            return jsonify({"status": f"IP {ips} removed from whitelist and added back to devices"}), 200
         else:
             return jsonify({"error": f"IP {ips} is not in the whitelist"}), 400
 
@@ -420,9 +507,14 @@ def api_stop_netcut():
 
     return jsonify({"status": "ARP spoofing attack stopped for all IPs"})
 
+
 @app.route('/force_stop_netcut', methods=['POST'])
 def api_force_stop_netcut():
     global stop_events, active_threads
+
+    # Load the IPs currently being spoofed
+    netcut_ips = load_netcut_ips_from_json()
+
     # Force stop all active threads
     for stop_event in stop_events:
         stop_event.set()  # Set event to stop the thread
@@ -436,7 +528,12 @@ def api_force_stop_netcut():
     active_threads.clear()
     stop_events.clear()
 
-    return jsonify({"status": "ARP spoofing attack forcefully stopped and session cleared"}), 200
+    # Move the IPs back to network_devices.json and clear netcut_ips.json
+    if netcut_ips:
+        add_devices_to_json(netcut_ips)
+        clear_netcut_ips_json()
+
+    return jsonify({"status": "ARP spoofing attack forcefully stopped, IPs restored to devices, and netcut list cleared."}), 200
 
 # Help Endpoint
 @app.route('/help', methods=['GET'])
