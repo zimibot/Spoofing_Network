@@ -98,11 +98,15 @@ def load_interfaces_from_json():
     with open(interfaces_file_path, 'r') as json_file:
         interfaces = json.load(json_file)
     return interfaces
-
 def get_gateway_and_netmask(interface_guid):
     iface_info = netifaces.ifaddresses(interface_guid)
     
     gateway_info = netifaces.gateways()
+    
+    # Check if a default gateway exists for AF_INET (IPv4)
+    if netifaces.AF_INET not in gateway_info['default']:
+        return None, None
+    
     gateway_ip = gateway_info['default'][netifaces.AF_INET][0]
     netmask = iface_info[netifaces.AF_INET][0]['netmask']
     
@@ -484,10 +488,15 @@ def api_scan_network():
 
     selected_interface_guid = available_interfaces[interface_idx]['guid']
     ip_range, gateway_ip = get_gateway_and_netmask(selected_interface_guid)
+    
+    if gateway_ip is None:
+        return jsonify({"error": "No default gateway found for the selected interface."}), 400
+
     local_ip = get_local_ip(selected_interface_guid)
     devices = scan_network(ip_range, local_ip, gateway_ip)
     
     return jsonify(devices)
+
 
 @app.route('/stop_netcut', methods=['POST'])
 def api_stop_netcut():
