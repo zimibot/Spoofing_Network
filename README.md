@@ -10,6 +10,7 @@ NetCut-like API is a Python-based application built with Flask to manage ARP spo
 - [Features](#features)
 - [Requirements](#requirements)
 - [Installation](#installation)
+- [Npcap Installation and Virtual Machine Recommendation](#npcap-installation-and-virtual-machine-recommendation)
 - [WinPcap Installation (For Windows)](#winpcap-installation-for-windows)
 - [Visual C++ Build Tools Installation (For Windows)](#visual-c-build-tools-installation-for-windows)
 - [Usage](#usage)
@@ -49,9 +50,38 @@ NetCut-like API is a Python-based application built with Flask to manage ARP spo
 - Threading
 - JSON
 
+## Npcap Installation and Virtual Machine Recommendation
+
+> **Important**: If you are running this application on **Windows**, it is strongly recommended to install **Npcap** instead of WinPcap. Npcap is the updated and actively maintained version of WinPcap.
+
+Additionally, for stability and security reasons, it is recommended to run ARP spoofing in a **virtual machine** environment such as **VMware** or **VirtualBox**. This prevents any unintended disruptions to your primary operating system.
+
+### Npcap Installation
+
+1. **Download Npcap**:
+   - You can download Npcap from the official website: [Npcap Download](https://nmap.org/npcap/).
+
+2. **Install Npcap**:
+   - Run the installer and ensure to select the **"WinPcap API-compatible mode"** option during installation.
+   
+3. **Verify Npcap Installation**:
+   - After installation, you can verify Npcap is working by running the following command in a terminal:
+     ```bash
+     nping --version
+     ```
+
+### Virtual Machine Recommendation
+
+To avoid potential issues such as Blue Screen of Death (BSOD) or network disruptions during ARP spoofing, it is highly recommended to run this application within a **virtual machine (VM)** environment:
+
+- **VMware**: [Download VMware](https://www.vmware.com/products/workstation-player/workstation-player-evaluation.html)
+- **VirtualBox**: [Download VirtualBox](https://www.virtualbox.org/)
+
+Running in a virtualized environment isolates the ARP spoofing activity from the host system, reducing the risk of system instability or crashes.
+
 ## WinPcap Installation (For Windows)
 
-If you're running this application on Windows, you need **WinPcap** to allow Scapy to capture and inject packets. Here's how to install WinPcap:
+If you're running this application on Windows and prefer **WinPcap**, it must be installed to allow Scapy to capture and inject packets. However, **Npcap** is preferred due to its modern support.
 
 1. **Download WinPcap**:
    - You can download WinPcap from the official website: [WinPcap Download](https://www.winpcap.org/install/default.htm).
@@ -148,7 +178,9 @@ Some Python libraries require **Visual C++ Build Tools** to be installed, especi
 - **`DELETE /whitelist`**: Remove IPs from the whitelist.
   - Parameters: `ip` (The IP address(es) to be removed)
 - **`GET /whitelist`**: Get the list of whitelisted IPs.
-- **`GET /help`**: Display API documentation and help information.
+- **`GET /help`**: Display API documentation and help
+
+ information.
 
 ### Web Dashboard Functionality
 - **Whitelist Management**: Add or remove IP addresses from the whitelist directly from the dashboard.
@@ -188,9 +220,7 @@ Some Python libraries require **Visual C++ Build Tools** to be installed, especi
    ```
 
 ### Running the API on Termux
-1
-
-. Start the Flask application in Termux:
+1. Start the Flask application in Termux:
    ```bash
    python api.py
    ```
@@ -224,7 +254,8 @@ Some Python libraries require **Visual C++ Build Tools** to be installed, especi
 - For Windows systems, ensure that the `wmi` module is installed and available.
 - For Termux, make sure that the script correctly detects the environment and uses `psutil` for network interface detection.
 - **Root access is required on Android** when using Termux to perform network scanning and ARP spoofing.
-- **Windows users must install [Visual C++ Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/)** for compiling certain Python libraries.
+- **Windows users must install [Npcap](https://nmap.org/npcap/)** for capturing and injecting network packets. It is recommended to run the application in **VMware** or **VirtualBox** to ensure system stability during ARP spoofing.
+- **Windows users must also install [Visual C++ Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/)** for compiling certain Python libraries.
 
 ## License
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
