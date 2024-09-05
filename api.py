@@ -19,6 +19,7 @@ json_file_path = 'network_devices.json'  # For scanned network devices
 whitelist_file_path = 'ip_whitelist.json'  # For IP whitelist
 netcut_file_path = 'netcut_ips.json'  # For storing IPs selected for spoofing
 
+
 # List to store active threads and events for ARP spoofing
 active_threads = []
 stop_events = []
