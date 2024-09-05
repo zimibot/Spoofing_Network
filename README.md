@@ -1,4 +1,6 @@
+Berikut adalah dokumentasi penuh yang mencakup peringatan terkait penggunaan thread yang terlalu banyak, dalam bahasa Inggris dan Indonesia:
 
+---
 
 # NetCut-like API
 ![Dashboard Screenshot](./screenshots/gambar.jpg)
@@ -24,6 +26,8 @@ NetCut-like API is a Python-based application built with Flask to manage ARP spo
   - [Running the API on Termux](#running-the-api-on-termux)
   - [Running `index.html` on Termux](#running-indexhtml-on-termux)
   - [Accessing the API on Termux](#accessing-the-api-on-termux)
+- [Warnings](#warnings)
+  - [Thread Overload and BSOD](#thread-overload-and-bsod)
 - [Notes](#notes)
 - [License](#license)
 
@@ -54,7 +58,7 @@ NetCut-like API is a Python-based application built with Flask to manage ARP spo
 
 > **Important**: If you are running this application on **Windows**, it is strongly recommended to install **Npcap** instead of WinPcap. Npcap is the updated and actively maintained version of WinPcap.
 
-Additionally, for stability and security reasons, it is recommended to run ARP spoofing in a **virtual machine** environment such as **VMware** or **VirtualBox**. This prevents any unintended disruptions to your primary operating system.
+Additionally, for stability and security reasons, it is recommended to run ARP spoofing in a **virtual machine (VM)** environment such as **VMware** or **VirtualBox**. This prevents any unintended disruptions to your primary operating system.
 
 ### Npcap Installation
 
@@ -72,7 +76,7 @@ Additionally, for stability and security reasons, it is recommended to run ARP s
 
 ### Virtual Machine Recommendation
 
-To avoid potential issues such as Blue Screen of Death (BSOD) or network disruptions during ARP spoofing, it is highly recommended to run this application within a **virtual machine (VM)** environment:
+To avoid potential issues such as **Blue Screen of Death (BSOD)** or network disruptions during ARP spoofing, it is highly recommended to run this application within a **virtual machine (VM)** environment:
 
 - **VMware**: [Download VMware](https://www.vmware.com/products/workstation-player/workstation-player-evaluation.html)
 - **VirtualBox**: [Download VirtualBox](https://www.virtualbox.org/)
@@ -94,7 +98,6 @@ If you're running this application on Windows and prefer **WinPcap**, it must be
      ```bash
      nping --version
      ```
-   - If WinPcap is installed correctly, Scapy will be able to capture network packets.
 
 ## Visual C++ Build Tools Installation (For Windows)
 
@@ -178,11 +181,11 @@ Some Python libraries require **Visual C++ Build Tools** to be installed, especi
 - **`DELETE /whitelist`**: Remove IPs from the whitelist.
   - Parameters: `ip` (The IP address(es) to be removed)
 - **`GET /whitelist`**: Get the list of whitelisted IPs.
-- **`GET /help`**: Display API documentation and help
+- **`GET /help`**: Display API documentation and help information.
 
- information.
+### Web Dashboard Function
 
-### Web Dashboard Functionality
+ality
 - **Whitelist Management**: Add or remove IP addresses from the whitelist directly from the dashboard.
 - **ARP Spoofing Management**: Start, stop, or force stop ARP spoofing attacks. Customize the target IPs and the number of threads used.
 - **Network Scanning**: Perform network scans to discover devices. The scanned devices are displayed on the dashboard and can be used to select target IPs for ARP spoofing.
@@ -248,6 +251,12 @@ Some Python libraries require **Visual C++ Build Tools** to be installed, especi
 ### Accessing the API on Termux
 - **From Your Android Device**: Open a browser and go to `http://localhost:5000`.
 - **From Another Device**: Find the IP address of your Android device by running `ifconfig` in Termux, then access the API using `http://<Your-IP>:5000`.
+
+## Warnings
+
+### Thread Overload and BSOD
+
+> **Warning**: If the number of threads used for ARP spoofing is too high, it can lead to a **Blue Screen of Death (BSOD)** on Windows systems. It is recommended to limit the number of threads to avoid overloading the network drivers. If you encounter BSOD issues, consider reducing the number of threads or running the application in a virtual environment such as **VMware** or **VirtualBox**.
 
 ## Notes
 - Ensure you have the proper permissions and legal rights to perform network scanning and ARP spoofing on the network you are testing.
