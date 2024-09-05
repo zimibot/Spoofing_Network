@@ -28,10 +28,11 @@ stop_events = []
 target_ips_list = []
 
 def ensure_json_file_exists(file_path, initial_data):
-    """Ensure the JSON file exists; if not, create it with initial data."""
-    if not os.path.exists(file_path):
+    """Ensure the JSON file exists and is valid; if not, create it with initial data."""
+    if not os.path.exists(file_path) or os.path.getsize(file_path) == 0:  # Check if the file exists and is not empty
         with open(file_path, 'w') as json_file:
             json.dump(initial_data, json_file, indent=4)
+
 
 def list_network_interfaces():
     if platform.system() == 'Windows':
@@ -96,13 +97,17 @@ def save_interfaces_to_json():
     ensure_json_file_exists(interfaces_file_path, [])
     with open(interfaces_file_path, 'w') as json_file:
         json.dump(interfaces, json_file, indent=4)
-
 def load_interfaces_from_json():
     """Load the list of network interfaces from a JSON file."""
     ensure_json_file_exists(interfaces_file_path, [])
-    with open(interfaces_file_path, 'r') as json_file:
-        interfaces = json.load(json_file)
+    try:
+        with open(interfaces_file_path, 'r') as json_file:
+            interfaces = json.load(json_file)
+    except json.JSONDecodeError:
+        interfaces = []  # Return an empty list if the file is empty or invalid
     return interfaces
+
+
 def get_gateway_and_netmask(interface_guid):
     iface_info = netifaces.ifaddresses(interface_guid)
     
