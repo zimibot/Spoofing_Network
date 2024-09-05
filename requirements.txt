@@ -1,4 +1,4 @@
-Flask==2.1.1
+Flask
 Flask-CORS==3.0.10
 scapy==2.4.5
 psutil==5.9.0

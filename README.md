@@ -9,6 +9,7 @@ NetCut-like API is a Python-based application built with Flask to manage ARP spo
 - [Features](#features)
 - [Requirements](#requirements)
 - [Installation](#installation)
+- [WinPcap Installation (For Windows)](#winpcap-installation-for-windows)
 - [Usage](#usage)
   - [Running the Application](#running-the-application)
   - [Accessing the Dashboard](#accessing-the-dashboard)
@@ -45,6 +46,23 @@ NetCut-like API is a Python-based application built with Flask to manage ARP spo
 - Netifaces
 - Threading
 - JSON
+
+## WinPcap Installation (For Windows)
+
+If you're running this application on Windows, you need **WinPcap** to allow Scapy to capture and inject packets. Here's how to install WinPcap:
+
+1. **Download WinPcap**:
+   - You can download WinPcap from the official website: [WinPcap Download](https://www.winpcap.org/install/default.htm).
+
+2. **Install WinPcap**:
+   - Run the installer and follow the on-screen instructions to complete the installation.
+
+3. **Verify Installation**:
+   - After installing WinPcap, verify that it is working by running the following command in a terminal:
+     ```bash
+     nping --version
+     ```
+   - If WinPcap is installed correctly, Scapy will be able to capture network packets.
 
 ## Installation
 
@@ -125,6 +143,8 @@ NetCut-like API is a Python-based application built with Flask to manage ARP spo
 ## Running on Termux
 
 ### Installation on Termux
+> **Important**: Ensure that your device is rooted before proceeding. Root access is required to run ARP spoofing and network scanning on Android through Termux.
+
 1. **Install Termux**: Download and install [Termux](https://termux.com/) from the Google Play Store or F-Droid.
 
 2. **Update and Upgrade Termux Packages**:
@@ -174,7 +194,9 @@ NetCut-like API is a Python-based application built with Flask to manage ARP spo
 
 3. **Access the Dashboard**:
    - **From Your Android Device**: Open a web browser and navigate to `http://localhost:8080/index.html`.
-   - **From Another Device**: Find the IP address of your Android device by running `ifconfig` in Termux. Access the dashboard using `http://<Your-IP>:8080/index.html`.
+   - **From Another Device**: Find the IP address of your Android device by running `ifconfig` in Termux. Access the dashboard using
+
+ `http://<Your-IP>:8080/index.html`.
 
 ### Accessing the API on Termux
 - **From Your Android Device**: Open a browser and go to `http://localhost:5000`.
@@ -184,6 +206,7 @@ NetCut-like API is a Python-based application built with Flask to manage ARP spo
 - Ensure you have the proper permissions and legal rights to perform network scanning and ARP spoofing on the network you are testing.
 - For Windows systems, ensure that the `wmi` module is installed and available.
 - For Termux, make sure that the script correctly detects the environment and uses `psutil` for network interface detection.
+- **Root access is required on Android** when using Termux to perform network scanning and ARP spoofing.
 
 ## License
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
