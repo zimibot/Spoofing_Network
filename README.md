@@ -1,6 +1,4 @@
-Berikut adalah dokumentasi penuh yang mencakup peringatan terkait penggunaan thread yang terlalu banyak, dalam bahasa Inggris dan Indonesia:
 
----
 
 # NetCut-like API  [Translate Indonesia](./Readme_Indonesia/README.md)
 ![Dashboard Screenshot](./screenshots/gambar.jpg)
