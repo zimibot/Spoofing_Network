@@ -3,3 +3,5 @@ Flask-CORS==3.0.10
 scapy==2.4.5
 psutil==5.9.0
 netifaces==0.11.0
+pywin32
+wmi

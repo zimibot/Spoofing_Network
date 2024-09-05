@@ -204,6 +204,9 @@
     </div>
 
     <script>
+      let host = "http://"+  window.location.host.split(":")[0]
+
+      console.log(host)
       function showSpinner() {
         document.getElementById("loadingSpinner").style.display = "flex";
       }
@@ -237,7 +240,7 @@
       // Function to load available interfaces
       function loadInterfaceData() {
         showSpinner();
-        fetch("http://localhost:5000/interface_data")
+        fetch(`${host}:5000/interface_data`)
           .then((response) => response.json())
           .then((data) => {
             const interfaceSelect = document.getElementById("interfaceSelect");
@@ -262,7 +265,7 @@
 
       function performScanInterface() {
         showSpinner();
-        fetch("http://localhost:5000/scan_interfaces")
+        fetch(`${host}:5000/scan_interfaces`)
           .then((response) => response.json())
           .then((data) => {
             Swal.fire({
@@ -278,7 +281,7 @@
       // Function to load current whitelist
       function loadWhitelist() {
         showSpinner();
-        fetch("http://localhost:5000/whitelist")
+        fetch(`${host}:5000/whitelist`)
           .then((response) => response.json())
           .then((data) => {
             const whitelist = document.getElementById("whitelist");
@@ -298,7 +301,7 @@
       function addToWhitelist() {
         const ips = document.getElementById("whitelistIps").value.split(",");
         showSpinner();
-        fetch("http://localhost:5000/whitelist", {
+        fetch(`${host}:5000/whitelist`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -322,7 +325,7 @@
       function removeFromWhitelist() {
         const ips = document.getElementById("whitelistIps").value.split(",");
         showSpinner();
-        fetch("http://localhost:5000/whitelist", {
+        fetch(`${host}:5000/whitelist`, {
           method: "DELETE",
           headers: {
             "Content-Type": "application/json",
@@ -356,7 +359,7 @@
           : selectedIps;
 
         showSpinner();
-        fetch("http://localhost:5000/start_netcut", {
+        fetch(`${host}:5000/start_netcut`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -384,7 +387,7 @@
       // Function to force stop ARP spoofing
       function forceStopNetcut() {
         showSpinner();
-        fetch("http://localhost:5000/force_stop_netcut", {
+        fetch(`${host}:5000/force_stop_netcut`, {
           method: "POST",
         })
           .then((response) => response.json())
@@ -405,7 +408,7 @@
           "scanInterfaceSelect"
         ).value;
         showSpinner();
-        fetch(`http://localhost:5000/scan_network?interface=${interfaceIdx}`)
+        fetch(`${host}:5000/scan_network?interface=${interfaceIdx}`)
           .then((response) => response.json())
           .then((data) => {
             const scannedDevices = document.getElementById("scannedDevices");
@@ -436,7 +439,7 @@
       // Function to load scanned network data from JSON file
       function loadScannedNetworkData() {
         showSpinner();
-        fetch("http://localhost:5000/scan_network_data")
+        fetch(`${host}:5000/scan_network_data`)
           .then((response) => response.json())
           .then((data) => {
             const scannedDevices = document.getElementById("scannedDevices");
@@ -467,7 +470,7 @@
       // Function to get help
       function getHelp() {
         showSpinner();
-        fetch("http://localhost:5000/help")
+        fetch(`${host}:5000/help`)
           .then((response) => response.json())
           .then((data) => {
             const helpContent = document.getElementById("helpContent");
@@ -479,7 +482,7 @@
 
       function loadNetcutTargets() {
         showSpinner();
-        fetch("http://localhost:5000/get_netcut")
+        fetch(`${host}:5000/get_netcut`)
           .then((response) => response.json())
           .then((data) => {
             const netcutTargets = document.getElementById("netcutTargets");

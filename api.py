@@ -9,7 +9,9 @@ import json
 import os
 import time
 app = Flask(__name__)
-CORS(app)
+
+# CORS(app)
+CORS(app, resources={r"/*": {"origins": "*"}}, allow_headers="*", methods=["GET", "POST", "DELETE", "OPTIONS"])
 
 # File paths for JSON storage
 interfaces_file_path = 'network_interfaces.json'  # For network interfaces
