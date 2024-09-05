@@ -97,6 +97,7 @@ def save_interfaces_to_json():
     ensure_json_file_exists(interfaces_file_path, [])
     with open(interfaces_file_path, 'w') as json_file:
         json.dump(interfaces, json_file, indent=4)
+        
 def load_interfaces_from_json():
     """Load the list of network interfaces from a JSON file."""
     ensure_json_file_exists(interfaces_file_path, [])
