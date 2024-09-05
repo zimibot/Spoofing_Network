@@ -8,6 +8,8 @@ import threading
 import json
 import os
 import time
+import socket as s
+
 app = Flask(__name__)
 
 # CORS(app)
@@ -140,7 +142,11 @@ def scan_network(ip_range, local_ip, gateway_ip):
             if ip != local_ip and ip != gateway_ip and ip not in whitelist:
                 # Avoid adding duplicates
                 if not any(device['ip'] == ip for device in devices):
-                    devices.append({'ip': ip, 'mac': mac})
+                    try:
+                        host = s.gethostbyaddr(ip)[0]  # Dapatkan hostname
+                    except s.herror:
+                        host = ip  # Jika hostname tidak ditemukan
+                    devices.append({'ip': ip, 'mac': mac, 'host': host})
     
     # Sort the devices by IP address
     devices.sort(key=lambda device: device['ip'])
@@ -182,7 +188,8 @@ def add_devices_to_json(ips):
     # Add each IP back to the list if it doesn't already exist
     for ip in ips:
         if not any(device['ip'] == ip for device in existing_devices):
-            existing_devices.append({'ip': ip, 'mac': 'unknown'})
+            host = s.gethostbyaddr(ip)[0]  
+            existing_devices.append({'ip': ip, 'mac': 'unknown', 'host': host})
     
     # Sort the devices by IP address
     existing_devices.sort(key=lambda device: device['ip'])
@@ -336,7 +343,8 @@ def add_device_to_json(ip):
     # Check if the IP already exists in the devices list
     if not any(device['ip'] == ip for device in existing_devices):
         # Add the IP back to the list with a placeholder MAC address
-        existing_devices.append({'ip': ip, 'mac': 'unknown'})
+        host = s.gethostbyaddr(ip)[0]  
+        existing_devices.append({'ip': ip, 'mac': 'unknown', 'host': host})
         update_devices_in_json(existing_devices)
 
 
