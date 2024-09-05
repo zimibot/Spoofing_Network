@@ -1,4 +1,5 @@
 
+
 # NetCut-like API
 ![Dashboard Screenshot](./screenshots/gambar.jpg)
 
@@ -10,6 +11,7 @@ NetCut-like API is a Python-based application built with Flask to manage ARP spo
 - [Requirements](#requirements)
 - [Installation](#installation)
 - [WinPcap Installation (For Windows)](#winpcap-installation-for-windows)
+- [Visual C++ Build Tools Installation (For Windows)](#visual-c-build-tools-installation-for-windows)
 - [Usage](#usage)
   - [Running the Application](#running-the-application)
   - [Accessing the Dashboard](#accessing-the-dashboard)
@@ -63,6 +65,21 @@ If you're running this application on Windows, you need **WinPcap** to allow Sca
      nping --version
      ```
    - If WinPcap is installed correctly, Scapy will be able to capture network packets.
+
+## Visual C++ Build Tools Installation (For Windows)
+
+Some Python libraries require **Visual C++ Build Tools** to be installed, especially when compiling C/C++ extensions. Here's how to install it:
+
+1. **Download Visual C++ Build Tools**:
+   - You can download it from the official Microsoft website: [Download Visual C++ Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/).
+
+2. **Install Visual C++ Build Tools**:
+   - Run the installer and make sure to select the following components:
+     - **Desktop development with C++**.
+     - **Windows 10 SDK** (if available).
+
+3. **Complete the Installation**:
+   - After the installation is complete, Python will be able to compile libraries that require these build tools.
 
 ## Installation
 
@@ -171,7 +188,9 @@ If you're running this application on Windows, you need **WinPcap** to allow Sca
    ```
 
 ### Running the API on Termux
-1. Start the Flask application in Termux:
+1
+
+. Start the Flask application in Termux:
    ```bash
    python api.py
    ```
@@ -194,9 +213,7 @@ If you're running this application on Windows, you need **WinPcap** to allow Sca
 
 3. **Access the Dashboard**:
    - **From Your Android Device**: Open a web browser and navigate to `http://localhost:8080/index.html`.
-   - **From Another Device**: Find the IP address of your Android device by running `ifconfig` in Termux. Access the dashboard using
-
- `http://<Your-IP>:8080/index.html`.
+   - **From Another Device**: Find the IP address of your Android device by running `ifconfig` in Termux. Access the dashboard using `http://<Your-IP>:8080/index.html`.
 
 ### Accessing the API on Termux
 - **From Your Android Device**: Open a browser and go to `http://localhost:5000`.
@@ -207,6 +224,7 @@ If you're running this application on Windows, you need **WinPcap** to allow Sca
 - For Windows systems, ensure that the `wmi` module is installed and available.
 - For Termux, make sure that the script correctly detects the environment and uses `psutil` for network interface detection.
 - **Root access is required on Android** when using Termux to perform network scanning and ARP spoofing.
+- **Windows users must install [Visual C++ Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/)** for compiling certain Python libraries.
 
 ## License
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
