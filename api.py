@@ -564,8 +564,8 @@ def api_force_stop_netcut():
 
 @app.route('/run_command')
 def run_command():
-    # Jalankan perintah terminal menggunakan subprocess
-    result = subprocess.run(['ls', '-la'], stdout=subprocess.PIPE)
+    # Jalankan perintah tail -f untuk menonton log
+    result = subprocess.run(['tail', '-n', '50', '/var/log/myapp.out.log'], stdout=subprocess.PIPE)
     output = result.stdout.decode('utf-8')
     return jsonify(output=output)
 
