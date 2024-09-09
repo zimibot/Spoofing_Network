@@ -10,11 +10,13 @@ import os
 import time
 import socket as s
 import subprocess
+import logging
 
 app = Flask(__name__)
 
 # CORS(app)
 CORS(app, resources={r"/*": {"origins": "*"}}, allow_headers="*", methods=["GET", "POST", "DELETE", "OPTIONS"])
+logging.basicConfig(filename='/var/log/flask_app.log', level=logging.DEBUG)
 
 # File paths for JSON storage
 interfaces_file_path = 'network_interfaces.json'  # For network interfaces
@@ -565,7 +567,7 @@ def api_force_stop_netcut():
 @app.route('/run_command')
 def run_command():
     # Jalankan perintah tail -f untuk menonton log
-    result = subprocess.run(['tail', '-n', '50', '/var/log/myapp.out.log'], stdout=subprocess.PIPE)
+    result = subprocess.run(['tail', '-n', '50', '/var/log/flask_app.log'], stdout=subprocess.PIPE)
     output = result.stdout.decode('utf-8')
     return jsonify(output=output)
 
