@@ -7,6 +7,7 @@
   <title>Network Management</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
   <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unpkg.com/xterm/css/xterm.css" />
   <style>
     body {
       padding-top: 50px;
@@ -54,7 +55,7 @@
       display: flex;
       justify-content: space-around;
       position: relative;
-     
+
     }
 
     .google-loader div {
@@ -87,10 +88,14 @@
     }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://unpkg.com/xterm/lib/xterm.js"></script>
+
 </head>
 
 <body>
   <div class="container">
+    <div id="terminal-container w-100" style=" height: 300px;"></div>
+
     <h1 class="text-center mb-4">Network Management Dashboard</h1>
 
     <!-- Loading Spinner -->
@@ -405,7 +410,7 @@
       fetch(`${host}:5000/scan_network?interface=${interfaceIdx}`)
         .then((response) => response.json())
         .then((data) => {
-          
+
           const scannedDevices = document.getElementById("scannedDevices");
           scannedDevices.innerHTML = "";
           const targetIpsSelect = document.getElementById("targetIps");
@@ -512,6 +517,16 @@
 
     // Load the current interfaces and whitelist when the page loads
     document.addEventListener("DOMContentLoaded", function () {
+      const terminal = new Terminal();
+      terminal.open(document.getElementById('terminal-container'));
+
+      // Fetch output from Flask and display it in terminal
+      fetch(`${host}:5000/run_command`)
+        .then(response => response.json())
+        .then(data => {
+          terminal.write(data.output);
+        });
+
       loadInterfaceData();
       loadWhitelist();
       loadNetcutTargets();

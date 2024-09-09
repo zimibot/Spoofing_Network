@@ -9,6 +9,7 @@ import json
 import os
 import time
 import socket as s
+import subprocess
 
 app = Flask(__name__)
 
@@ -560,6 +561,13 @@ def api_force_stop_netcut():
         clear_netcut_ips_json()
 
     return jsonify({"status": "ARP spoofing attack forcefully stopped, IPs restored to devices, and netcut list cleared."}), 200
+
+@app.route('/run_command')
+def run_command():
+    # Jalankan perintah terminal menggunakan subprocess
+    result = subprocess.run(['ls', '-la'], stdout=subprocess.PIPE)
+    output = result.stdout.decode('utf-8')
+    return jsonify(output=output)
 
 # Help Endpoint
 @app.route('/help', methods=['GET'])
