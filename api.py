@@ -572,7 +572,7 @@ def run_command():
         # Membuka dan membaca file log secara langsung tanpa subprocess
         with open('/var/log/gunicorn_error.log', 'r') as log_file:
             # Membaca 50 baris terakhir dari file log
-            lines = log_file.readlines()[-50:]
+            lines = log_file.readlines()[-100:]
 
         # Filter: Hapus baris yang mengandung '/run_command'
         filtered_lines = [line for line in lines if '/run_command' not in line]
