@@ -364,6 +364,7 @@
       })
         .then((response) => response.json())
         .then((data) => {
+          loadNetcutTargets()
           Swal.fire({
             icon: data.error ? "error" : "success",
             title: data.error ? "Failed" : "Success",
@@ -384,6 +385,7 @@
       })
         .then((response) => response.json())
         .then((data) => {
+          loadNetcutTargets()
           Swal.fire({
             icon: data.error ? "error" : "success",
             title: data.error ? "Failed" : "Success",
