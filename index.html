@@ -528,10 +528,10 @@
       loadNetcutTargets();
       loadScannedNetworkData(); // Load scanned network data on page load'
 
+      const terminal = new Terminal();
+      terminal.open(document.getElementById('terminal-container'));
 
       setInterval(() => {
-        const terminal = new Terminal();
-        terminal.open(document.getElementById('terminal-container'));
 
         // Fetch output from Flask and display it in terminal
         fetch(`${host}:5000/run_command`)
