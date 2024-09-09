@@ -86,8 +86,9 @@
         transform: scale(1);
       }
     }
+
     .xterm-dom-renderer-owner-1 .xterm-rows {
-      white-space: nowrap!important;
+      white-space: nowrap !important;
     }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -520,7 +521,7 @@
 
     // Load the current interfaces and whitelist when the page loads
     document.addEventListener("DOMContentLoaded", function () {
-   
+
 
       loadInterfaceData();
       loadWhitelist();
@@ -528,15 +529,17 @@
       loadScannedNetworkData(); // Load scanned network data on page load'
 
 
-      const terminal = new Terminal();
-      terminal.open(document.getElementById('terminal-container'));
+      setInterval(() => {
+        const terminal = new Terminal();
+        terminal.open(document.getElementById('terminal-container'));
 
-      // Fetch output from Flask and display it in terminal
-      fetch(`${host}:5000/run_command`)
-        .then(response => response.json())
-        .then(data => {
-          terminal.write(data.output);
-        });
+        // Fetch output from Flask and display it in terminal
+        fetch(`${host}:5000/run_command`)
+          .then(response => response.json())
+          .then(data => {
+            terminal.write(data.output);
+          });
+      }, 1000);
     });
   </script>
 </body>
