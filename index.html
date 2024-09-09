@@ -207,6 +207,20 @@
   <script>
     let host = "http://" + window.location.host.split(":")[0]
 
+    const terminal = new Terminal();
+    terminal.open(document.getElementById('terminal-container'));
+
+
+
+    const fecthShell = () => {
+      fetch(`${host}:5000/run_command`)
+        .then(response => response.json())
+        .then(data => {
+          terminal.write(data.output);
+        });
+    }
+
+
     console.log(host)
     function showSpinner() {
       document.getElementById("loadingSpinner").style.display = "flex";
@@ -244,6 +258,7 @@
       fetch(`${host}:5000/interface_data`)
         .then((response) => response.json())
         .then((data) => {
+          fecthShell()
           const interfaceSelect = document.getElementById("interfaceSelect");
           const scanInterfaceSelect = document.getElementById(
             "scanInterfaceSelect"
@@ -269,6 +284,7 @@
       fetch(`${host}:5000/scan_interfaces`)
         .then((response) => response.json())
         .then((data) => {
+          fecthShell()
           Swal.fire({
             icon: "success",
             title: "Success",
@@ -285,6 +301,7 @@
       fetch(`${host}:5000/whitelist`)
         .then((response) => response.json())
         .then((data) => {
+          fecthShell()
           const whitelist = document.getElementById("whitelist");
           whitelist.innerHTML = "";
           data.forEach((ip) => {
@@ -311,6 +328,7 @@
       })
         .then((response) => response.json())
         .then((data) => {
+          fecthShell()
           Swal.fire({
             icon: data.error ? "error" : "success",
             title: data.error ? "Failed" : "Success",
@@ -335,6 +353,7 @@
       })
         .then((response) => response.json())
         .then((data) => {
+          fecthShell()
           Swal.fire({
             icon: data.error ? "error" : "success",
             title: data.error ? "Failed" : "Success",
@@ -373,6 +392,7 @@
       })
         .then((response) => response.json())
         .then((data) => {
+          fecthShell()
           loadNetcutTargets()
           Swal.fire({
             icon: data.error ? "error" : "success",
@@ -394,6 +414,7 @@
       })
         .then((response) => response.json())
         .then((data) => {
+          fecthShell()
           loadNetcutTargets()
           Swal.fire({
             icon: data.error ? "error" : "success",
@@ -423,7 +444,7 @@
           allOption.value = "all";
           allOption.textContent = "all";
           targetIpsSelect.appendChild(allOption);
-
+          fecthShell()
           data.forEach((device) => {
             const li = document.createElement("li");
             li.className = "list-group-item";
@@ -456,6 +477,7 @@
       fetch(`${host}:5000/scan_network_data`)
         .then((response) => response.json())
         .then((data) => {
+          fecthShell()
           const scannedDevices = document.getElementById("scannedDevices");
           scannedDevices.innerHTML = "";
           const targetIpsSelect = document.getElementById("targetIps");
@@ -494,6 +516,7 @@
       fetch(`${host}:5000/help`)
         .then((response) => response.json())
         .then((data) => {
+          fecthShell()
           const helpContent = document.getElementById("helpContent");
           helpContent.textContent = JSON.stringify(data, null, 4);
         })
@@ -506,6 +529,7 @@
       fetch(`${host}:5000/get_netcut`)
         .then((response) => response.json())
         .then((data) => {
+          fecthShell()
           const netcutTargets = document.getElementById("netcutTargets");
           netcutTargets.innerHTML = "";
           data.forEach((ip) => {
@@ -519,6 +543,8 @@
         .finally(hideSpinner);
     }
 
+
+    
     // Load the current interfaces and whitelist when the page loads
     document.addEventListener("DOMContentLoaded", function () {
 
@@ -528,18 +554,7 @@
       loadNetcutTargets();
       loadScannedNetworkData(); // Load scanned network data on page load'
 
-      const terminal = new Terminal();
-      terminal.open(document.getElementById('terminal-container'));
-
-      setInterval(() => {
-
-        // Fetch output from Flask and display it in terminal
-        fetch(`${host}:5000/run_command`)
-          .then(response => response.json())
-          .then(data => {
-            terminal.write(data.output);
-          });
-      }, 1000);
+      fecthShell()
     });
   </script>
 </body>
