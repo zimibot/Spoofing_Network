@@ -568,19 +568,22 @@ def api_force_stop_netcut():
 
 @app.route('/run_command')
 def run_command():
-    # Nonaktifkan sementara log error hanya di route ini
-    gunicorn_error_logger = logging.getLogger('gunicorn.error')
-    gunicorn_error_logger.setLevel(logging.CRITICAL)
-
     try:
-        result = subprocess.run(['tail', '-n', '50', '/var/log/gunicorn_error.log'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        output = result.stdout.decode('utf-8')
+        # Membuka dan membaca file log secara langsung tanpa subprocess
+        with open('/var/log/gunicorn_error.log', 'r') as log_file:
+            # Membaca 50 baris terakhir dari file log
+            lines = log_file.readlines()[-50:]
+
+        # Filter: Hapus baris yang mengandung '/run_command'
+        filtered_lines = [line for line in lines if '/run_command' not in line]
+
+        # Menggabungkan baris-baris yang tersisa menjadi satu string
+        output = ''.join(filtered_lines)
+
+        # Mengirimkan output tanpa indikasi '/run_command'
         return jsonify(output=output)
     except Exception as e:
-        return jsonify({'error': 'Error running command'}), 500
-    finally:
-        # Kembalikan ke level log sebelumnya
-        gunicorn_error_logger.setLevel(logging.ERROR)
+        return jsonify({'error': str(e)}), 500
 
 # Help Endpoint
 @app.route('/help', methods=['GET'])
