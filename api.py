@@ -29,6 +29,8 @@ active_threads = []
 stop_events = []
 target_ips_list = []
 
+
+
 def ensure_json_file_exists(file_path, initial_data):
     """Ensure the JSON file exists and is valid; if not, create it with initial data."""
     if not os.path.exists(file_path) or os.path.getsize(file_path) == 0:  # Check if the file exists and is not empty
@@ -563,12 +565,22 @@ def api_force_stop_netcut():
 
     return jsonify({"status": "ARP spoofing attack forcefully stopped, IPs restored to devices, and netcut list cleared."}), 200
 
+
 @app.route('/run_command')
 def run_command():
-    # Jalankan perintah tail -f untuk menonton log
-    result = subprocess.run(['tail', '-n', '50', '/var/log/flask_app.log'], stdout=subprocess.PIPE)
-    output = result.stdout.decode('utf-8')
-    return jsonify(output=output)
+    # Nonaktifkan sementara log error hanya di route ini
+    gunicorn_error_logger = logging.getLogger('gunicorn.error')
+    gunicorn_error_logger.setLevel(logging.CRITICAL)
+
+    try:
+        result = subprocess.run(['tail', '-n', '50', '/var/log/gunicorn_error.log'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        output = result.stdout.decode('utf-8')
+        return jsonify(output=output)
+    except Exception as e:
+        return jsonify({'error': 'Error running command'}), 500
+    finally:
+        # Kembalikan ke level log sebelumnya
+        gunicorn_error_logger.setLevel(logging.ERROR)
 
 # Help Endpoint
 @app.route('/help', methods=['GET'])
