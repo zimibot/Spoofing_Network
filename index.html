@@ -517,6 +517,14 @@
 
     // Load the current interfaces and whitelist when the page loads
     document.addEventListener("DOMContentLoaded", function () {
+   
+
+      loadInterfaceData();
+      loadWhitelist();
+      loadNetcutTargets();
+      loadScannedNetworkData(); // Load scanned network data on page load'
+
+
       const terminal = new Terminal();
       terminal.open(document.getElementById('terminal-container'));
 
@@ -526,11 +534,6 @@
         .then(data => {
           terminal.write(data.output);
         });
-
-      loadInterfaceData();
-      loadWhitelist();
-      loadNetcutTargets();
-      loadScannedNetworkData(); // Load scanned network data on page load
     });
   </script>
 </body>
